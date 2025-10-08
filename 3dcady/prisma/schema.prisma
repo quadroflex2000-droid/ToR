@@ -1,0 +1,603 @@
+// 3dcady - AI-Powered Interior Project Hub Database Schema
+// Generated for Prisma ORM
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Management Models
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  passwordHash    String   @map("password_hash")
+  roleType        RoleType @map("role_type")
+  subscriptionPlan SubscriptionPlan @map("subscription_plan")
+  createdDate     DateTime @default(now()) @map("created_date")
+  updatedDate     DateTime @updatedAt @map("updated_date")
+  organizationId  String?  @map("organization_id")
+
+  // Profile fields (embedded)
+  firstName       String?  @map("first_name")
+  lastName        String?  @map("last_name")
+  phone           String?
+  avatarUrl       String?  @map("avatar_url")
+  companyName     String?  @map("company_name")
+  companyWebsite  String?  @map("company_website")
+  bio             String?
+
+  // Notification preferences (JSON)
+  notificationPreferences Json? @map("notification_preferences")
+
+  // Relations
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  ownedProjects   Project[] @relation("ProjectOwner")
+  permissions     UserPermission[]
+  sentMessages    Message[]
+  notifications   Notification[]
+  subscriptions   Subscription[]
+  auditLogs       AuditLog[]
+  supplierProfile SupplierProfile?
+  dashboardWidgets DashboardWidget[]
+
+  @@map("users")
+}
+
+model Organization {
+  id               String   @id @default(cuid())
+  name             String
+  type             OrganizationType
+  subscriptionTier SubscriptionPlan @map("subscription_tier")
+  createdDate      DateTime @default(now()) @map("created_date")
+  
+  // Settings (JSON)
+  settings         Json?
+
+  // Relations
+  users            User[]
+  projects         Project[]
+
+  @@map("organizations")
+}
+
+model UserPermission {
+  id          String      @id @default(cuid())
+  userId      String      @map("user_id")
+  projectId   String      @map("project_id")
+  accessLevel AccessLevel @map("access_level")
+  grantedBy   String      @map("granted_by")
+  grantedDate DateTime    @default(now()) @map("granted_date")
+
+  // Relations
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@map("user_permissions")
+}
+
+// Project Management Models
+model Project {
+  id              String        @id @default(cuid())
+  name            String
+  description     String?
+  status          ProjectStatus
+  budgetPlanned   Decimal       @map("budget_planned") @db.Decimal(12, 2)
+  budgetActual    Decimal       @default(0) @map("budget_actual") @db.Decimal(12, 2)
+  currency        String        @default("USD")
+  ownerId         String        @map("owner_id")
+  organizationId  String        @map("organization_id")
+  createdDate     DateTime      @default(now()) @map("created_date")
+  updatedDate     DateTime      @updatedAt @map("updated_date")
+  deadline        DateTime?
+  tags            String[]
+  
+  // Settings (JSON)
+  projectSettings Json?         @map("project_settings")
+
+  // Relations
+  owner           User          @relation("ProjectOwner", fields: [ownerId], references: [id])
+  organization    Organization  @relation(fields: [organizationId], references: [id])
+  permissions     UserPermission[]
+  stages          ProjectStage[]
+  specifications  TechnicalSpecification[]
+  messageThreads  MessageThread[]
+  fileUploads     FileUpload[]
+  analysisJobs    DocumentAnalysisJob[]
+
+  @@map("projects")
+}
+
+model ProjectStage {
+  id          String       @id @default(cuid())
+  projectId   String       @map("project_id")
+  name        String
+  description String?
+  order       Int
+  status      StageStatus
+  deadline    DateTime?
+  createdDate DateTime     @default(now()) @map("created_date")
+  updatedDate DateTime     @updatedAt @map("updated_date")
+
+  // Relations
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks       Task[]
+
+  @@map("project_stages")
+}
+
+model Task {
+  id          String      @id @default(cuid())
+  stageId     String      @map("stage_id")
+  title       String
+  description String?
+  status      TaskStatus
+  assignedTo  String?     @map("assigned_to")
+  dueDate     DateTime?   @map("due_date")
+  priority    TaskPriority
+  createdDate DateTime    @default(now()) @map("created_date")
+  updatedDate DateTime    @updatedAt @map("updated_date")
+
+  // Relations
+  stage       ProjectStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  @@map("tasks")
+}
+
+// Technical Specification Models
+model TechnicalSpecification {
+  id          String                @id @default(cuid())
+  projectId   String                @map("project_id")
+  category    SpecificationCategory
+  name        String
+  description String?
+  status      SpecificationStatus
+  createdBy   String                @map("created_by")
+  approvedBy  String?               @map("approved_by")
+  createdDate DateTime              @default(now()) @map("created_date")
+  updatedDate DateTime              @updatedAt @map("updated_date")
+  deadline    DateTime?
+
+  // Relations
+  project     Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  items       SpecificationItem[]
+  proposals   Proposal[]
+
+  @@map("technical_specifications")
+}
+
+model SpecificationItem {
+  id                String                 @id @default(cuid())
+  specId            String                 @map("spec_id")
+  name              String
+  description       String?
+  quantity          Decimal                @db.Decimal(10, 3)
+  unit              String
+  specifications    Json?                  // Flexible specs storage
+  estimatedPrice    Decimal?               @map("estimated_price") @db.Decimal(10, 2)
+  notes             String?
+  order             Int
+  productReferences String[]               @map("product_references")
+
+  // Relations
+  specification     TechnicalSpecification @relation(fields: [specId], references: [id], onDelete: Cascade)
+  proposalItems     ProposalItem[]
+
+  @@map("specification_items")
+}
+
+// Supplier Management Models
+model SupplierProfile {
+  id                   String                @id @default(cuid())
+  userId               String                @unique @map("user_id")
+  companyRegistration  String                @map("company_registration")
+  taxId                String?               @map("tax_id")
+  website              String?
+  logoUrl              String?               @map("logo_url")
+  description          String
+  categories           SpecificationCategory[]
+  serviceAreas         String[]              @map("service_areas")
+  rating               Decimal               @default(0) @db.Decimal(3, 2)
+  reviewCount          Int                   @default(0) @map("review_count")
+  verificationStatus   VerificationStatus    @map("verification_status")
+  createdDate          DateTime              @default(now()) @map("created_date")
+  updatedDate          DateTime              @updatedAt @map("updated_date")
+  
+  // JSON fields for complex data
+  certifications       Json?                 // Array of certification objects
+  portfolio            Json?                 // Array of portfolio items
+
+  // Relations
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products             ProductCatalog[]
+  proposals            Proposal[]
+
+  @@map("supplier_profiles")
+}
+
+// Product Catalog Models
+model ProductCatalog {
+  id            String                @id @default(cuid())
+  supplierId    String                @map("supplier_id")
+  name          String
+  description   String
+  category      SpecificationCategory
+  subcategory   String?
+  price         Decimal               @db.Decimal(10, 2)
+  currency      String                @default("USD")
+  unit          String
+  availability  ProductAvailability
+  leadTimeDays  Int?                  @map("lead_time_days")
+  minimumOrder  Int?                  @map("minimum_order")
+  tags          String[]
+  createdDate   DateTime              @default(now()) @map("created_date")
+  updatedDate   DateTime              @updatedAt @map("updated_date")
+  
+  // JSON fields for complex data
+  specifications Json?                // Product specifications
+  images         Json?                // Array of image objects
+  documents      Json?                // Array of document objects
+
+  // Relations
+  supplier       SupplierProfile      @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  proposalItems  ProposalItem[]
+
+  @@map("product_catalog")
+}
+
+// Proposal Management Models
+model Proposal {
+  id               String                 @id @default(cuid())
+  specId           String                 @map("spec_id")
+  supplierId       String                 @map("supplier_id")
+  totalAmount      Decimal                @map("total_amount") @db.Decimal(12, 2)
+  currency         String                 @default("USD")
+  status           ProposalStatus
+  submittedDate    DateTime?              @map("submitted_date")
+  validUntil       DateTime?              @map("valid_until")
+  responseDeadline DateTime?              @map("response_deadline")
+  notes            String?
+  termsConditions  String?                @map("terms_conditions")
+  createdDate      DateTime               @default(now()) @map("created_date")
+  updatedDate      DateTime               @updatedAt @map("updated_date")
+
+  // Relations
+  specification    TechnicalSpecification @relation(fields: [specId], references: [id], onDelete: Cascade)
+  supplier         SupplierProfile        @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  items            ProposalItem[]
+
+  @@map("proposals")
+}
+
+model ProposalItem {
+  id            String            @id @default(cuid())
+  proposalId    String            @map("proposal_id")
+  specItemId    String            @map("spec_item_id")
+  productId     String?           @map("product_id")
+  description   String
+  quantity      Decimal           @db.Decimal(10, 3)
+  unitPrice     Decimal           @map("unit_price") @db.Decimal(10, 2)
+  totalPrice    Decimal           @map("total_price") @db.Decimal(12, 2)
+  leadTimeDays  Int?              @map("lead_time_days")
+  notes         String?
+  
+  // JSON field for alternatives
+  alternatives  Json?             // Array of alternative product options
+
+  // Relations
+  proposal      Proposal          @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  specItem      SpecificationItem @relation(fields: [specItemId], references: [id], onDelete: Cascade)
+  product       ProductCatalog?   @relation(fields: [productId], references: [id])
+
+  @@map("proposal_items")
+}
+
+// Communication Models
+model MessageThread {
+  id           String          @id @default(cuid())
+  projectId    String          @map("project_id")
+  subject      String
+  participants String[]        // Array of user IDs
+  threadType   ThreadType      @map("thread_type")
+  referenceId  String?         @map("reference_id") // proposal_id, spec_id, etc.
+  createdDate  DateTime        @default(now()) @map("created_date")
+  updatedDate  DateTime        @updatedAt @map("updated_date")
+
+  // Relations
+  project      Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  messages     Message[]
+
+  @@map("message_threads")
+}
+
+model Message {
+  id          String      @id @default(cuid())
+  threadId    String      @map("thread_id")
+  senderId    String      @map("sender_id")
+  content     String
+  messageType MessageType @map("message_type")
+  createdDate DateTime    @default(now()) @map("created_date")
+  
+  // JSON fields for complex data
+  attachments Json?       // Array of attachment objects
+  readBy      Json?       // Array of read status objects
+
+  // Relations
+  thread      MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender      User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+// Notification Models
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String           @map("user_id")
+  type        NotificationType
+  title       String
+  message     String
+  data        Json?            // Additional notification data
+  read        Boolean          @default(false)
+  createdDate DateTime         @default(now()) @map("created_date")
+
+  // Relations
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+// File Upload Models
+model FileUpload {
+  id           String    @id @default(cuid())
+  originalName String    @map("original_name")
+  storedName   String    @map("stored_name")
+  url          String
+  sizeBytes    BigInt    @map("size_bytes")
+  mimeType     String    @map("mime_type")
+  uploadedBy   String    @map("uploaded_by")
+  projectId    String?   @map("project_id")
+  createdDate  DateTime  @default(now()) @map("created_date")
+
+  // Relations
+  project      Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  analysisJobs DocumentAnalysisJob[]
+
+  @@map("file_uploads")
+}
+
+// AI Document Analysis Models
+model DocumentAnalysisJob {
+  id            String                @id @default(cuid())
+  projectId     String                @map("project_id")
+  fileId        String                @map("file_id")
+  status        AnalysisStatus
+  analysisType  AnalysisType          @map("analysis_type")
+  startedDate   DateTime?             @map("started_date")
+  completedDate DateTime?             @map("completed_date")
+  errorMessage  String?               @map("error_message")
+  
+  // JSON field for analysis results
+  results       Json?                 // Analysis results object
+
+  // Relations
+  project       Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  file          FileUpload            @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@map("document_analysis_jobs")
+}
+
+// Subscription Models
+model Subscription {
+  id                 String           @id @default(cuid())
+  userId             String           @map("user_id")
+  plan               SubscriptionPlan
+  status             SubscriptionStatus
+  currentPeriodStart DateTime         @map("current_period_start")
+  currentPeriodEnd   DateTime         @map("current_period_end")
+  cancelAtPeriodEnd  Boolean          @map("cancel_at_period_end") @default(false)
+  createdDate        DateTime         @default(now()) @map("created_date")
+  updatedDate        DateTime         @updatedAt @map("updated_date")
+
+  // Relations
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices           BillingInvoice[]
+
+  @@map("subscriptions")
+}
+
+model BillingInvoice {
+  id             String         @id @default(cuid())
+  subscriptionId String         @map("subscription_id")
+  amount         Decimal        @db.Decimal(10, 2)
+  currency       String         @default("USD")
+  status         InvoiceStatus
+  issueDate      DateTime       @map("issue_date")
+  dueDate        DateTime       @map("due_date")
+  paidDate       DateTime?      @map("paid_date")
+  invoiceUrl     String?        @map("invoice_url")
+
+  // Relations
+  subscription   Subscription   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@map("billing_invoices")
+}
+
+// Dashboard Models
+model DashboardWidget {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  widgetType String   @map("widget_type")
+  position   Json     // Position and size data
+  settings   Json?    // Widget-specific settings
+  isVisible  Boolean  @map("is_visible") @default(true)
+
+  // Relations
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("dashboard_widgets")
+}
+
+// Audit Trail Models
+model AuditLog {
+  id           String    @id @default(cuid())
+  userId       String    @map("user_id")
+  action       String
+  resourceType String    @map("resource_type")
+  resourceId   String    @map("resource_id")
+  details      Json?     // Additional action details
+  ipAddress    String?   @map("ip_address")
+  userAgent    String?   @map("user_agent")
+  createdDate  DateTime  @default(now()) @map("created_date")
+
+  // Relations
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+}
+
+// Enums
+enum RoleType {
+  CLIENT
+  SUPPLIER
+  ADMIN
+}
+
+enum OrganizationType {
+  DESIGN_STUDIO
+  SUPPLIER
+  CONTRACTOR
+}
+
+enum SubscriptionPlan {
+  FREE
+  PRO
+  BUSINESS
+}
+
+enum AccessLevel {
+  VIEW
+  EDIT
+  ADMIN
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum StageStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  BLOCKED
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum SpecificationCategory {
+  FINISHING_MATERIALS
+  FURNITURE
+  LIGHTING
+  PLUMBING
+  ELECTRICAL
+  HVAC
+  CUSTOM
+}
+
+enum SpecificationStatus {
+  DRAFT
+  PUBLISHED
+  APPROVED
+  ARCHIVED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ProductAvailability {
+  IN_STOCK
+  MADE_TO_ORDER
+  DISCONTINUED
+}
+
+enum ProposalStatus {
+  DRAFT
+  SUBMITTED
+  REVIEWED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum ThreadType {
+  PROJECT
+  PROPOSAL
+  SUPPORT
+}
+
+enum MessageType {
+  TEXT
+  FILE
+  SYSTEM
+}
+
+enum NotificationType {
+  PROPOSAL_RECEIVED
+  PROPOSAL_ACCEPTED
+  PROPOSAL_REJECTED
+  DEADLINE_APPROACHING
+  BUDGET_ALERT
+  PROJECT_UPDATE
+  MESSAGE_RECEIVED
+  SYSTEM_ANNOUNCEMENT
+}
+
+enum AnalysisStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum AnalysisType {
+  SPECIFICATION_EXTRACTION
+  CAD_ANALYSIS
+  GENERAL
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
