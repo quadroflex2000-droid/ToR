@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from '@/components/auth-provider';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -32,7 +32,7 @@ const navigation = [
 
 export default function SupplierLayout({ children }: SupplierLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { data: session } = useSession();
+  const { session } = useSession();
   const pathname = usePathname();
 
   return (

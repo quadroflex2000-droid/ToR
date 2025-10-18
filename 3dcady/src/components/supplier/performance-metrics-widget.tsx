@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ChartBarIcon, TrendingUpIcon, StarIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, ArrowTrendingUpIcon, StarIcon } from '@heroicons/react/24/outline';
 
 interface Metrics {
   proposalsSubmitted: number;
@@ -75,7 +75,7 @@ export default function PerformanceMetricsWidget() {
           <span className="text-sm text-gray-600">Success Rate</span>
           <div className="flex items-center space-x-2">
             <span className="font-semibold text-gray-900">{acceptanceRate.toFixed(1)}%</span>
-            <TrendingUpIcon className="w-4 h-4 text-green-500" />
+            <ArrowTrendingUpIcon className="w-4 h-4 text-green-500" />
           </div>
         </div>
 

@@ -6,6 +6,11 @@ import ProjectOverviewWidget from '@/components/widgets/project-overview-widget'
 import BudgetAnalyticsWidget from '@/components/widgets/budget-analytics-widget';
 import IncomingProposalsWidget from '@/components/widgets/incoming-proposals-widget';
 import CalendarTasksWidget from '@/components/widgets/calendar-tasks-widget';
+import Link from 'next/link';
+import { 
+  BuildingOfficeIcon,
+  ArrowRightIcon 
+} from '@heroicons/react/24/outline';
 
 export default function DashboardPage() {
   const { session } = useSession();
@@ -24,6 +29,28 @@ export default function DashboardPage() {
           <p className="text-gray-600 mt-2">
             Here's what's happening with your projects today.
           </p>
+        </div>
+
+        {/* Role Switcher */}
+        <div className="mb-6">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <BuildingOfficeIcon className="w-8 h-8 text-amber-600" />
+                <div>
+                  <h3 className="text-sm font-medium text-amber-800">Supplier Portal Available</h3>
+                  <p className="text-xs text-amber-600">Switch to supplier mode to manage opportunities and orders</p>
+                </div>
+              </div>
+              <Link
+                href="/supplier/dashboard"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-amber-700 bg-amber-100 hover:bg-amber-200 transition-colors"
+              >
+                <span>Switch to Supplier</span>
+                <ArrowRightIcon className="w-4 h-4 ml-2" />
+              </Link>
+            </div>
+          </div>
         </div>
 
         {/* Dashboard Grid */}

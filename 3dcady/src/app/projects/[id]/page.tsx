@@ -4,11 +4,13 @@ import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import DashboardLayout from '@/components/dashboard/dashboard-layout';
 import KanbanBoard from '@/components/project-management/kanban-board';
+import ProjectFilesManager from '@/components/project-files/project-files-manager';
 import { 
   AdjustmentsHorizontalIcon,
   DocumentPlusIcon,
   UserPlusIcon,
-  Cog6ToothIcon 
+  Cog6ToothIcon,
+  FolderIcon
 } from '@heroicons/react/24/outline';
 
 export default function ProjectPage() {
@@ -18,6 +20,7 @@ export default function ProjectPage() {
 
   const tabs = [
     { id: 'kanban', name: 'Kanban Board', icon: AdjustmentsHorizontalIcon },
+    { id: 'files', name: 'Files & AI Analysis', icon: FolderIcon },
     { id: 'specifications', name: 'Specifications', icon: DocumentPlusIcon },
     { id: 'team', name: 'Team', icon: UserPlusIcon },
     { id: 'settings', name: 'Settings', icon: Cog6ToothIcon },
@@ -96,6 +99,12 @@ export default function ProjectPage() {
                 onItemUpdate={handleItemUpdate}
                 onStageUpdate={handleStageUpdate}
               />
+            </div>
+          )}
+
+          {activeTab === 'files' && (
+            <div className="p-6">
+              <ProjectFilesManager projectId={projectId} />
             </div>
           )}
 
