@@ -433,3 +433,320 @@ export interface AuditLog {
   user_agent?: string;
   created_date: Date;
 }
+
+// Furniture Configurator Types
+export type ProductTypeName = 'kitchen' | 'wardrobe';
+
+export interface ProductType {
+  id: string;
+  name: ProductTypeName;
+  displayName: string;
+  isActive: boolean;
+}
+
+export interface OptionCategory {
+  id: string;
+  productTypeId: string;
+  name: string;
+  title: string;
+  stepOrder: number;
+  isRequired: boolean;
+  allowsMultiple: boolean;
+  conditionalDisplay?: ConditionalLogic;
+  options?: OptionValue[];
+}
+
+export interface OptionValue {
+  id: string;
+  categoryId: string;
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  priceFactor?: number;
+  specifications?: Record<string, any>;
+  displayOrder: number;
+  isAvailable: boolean;
+}
+
+export interface ConditionalLogic {
+  showIf?: {
+    field: string;
+    operator: 'equals' | 'notEquals' | 'in' | 'notIn';
+    value: any;
+  }[];
+  hideIf?: {
+    field: string;
+    operator: 'equals' | 'notEquals' | 'in' | 'notIn';
+    value: any;
+  }[];
+}
+
+export type LayoutType = 
+  | 'linear' 
+  | 'l-shaped' 
+  | 'u-shaped' 
+  | 'island' 
+  | 'parallel'
+  | 'built-in'; // for wardrobes
+
+export type StyleType = 
+  | 'modern' 
+  | 'classic' 
+  | 'loft' 
+  | 'minimalist' 
+  | 'traditional';
+
+export type CorpusMaterial = 
+  | 'marine_plywood' 
+  | 'mdf' 
+  | 'mr_particle_board';
+
+export type FacadeMaterial = 
+  | 'acrylic_mdf' 
+  | 'lacquered_mdf' 
+  | 'laminated_mdf' 
+  | 'veneer' 
+  | 'pvc_film' 
+  | 'solid_wood';
+
+export type FinishType = 'high_gloss' | 'matte' | 'super_matte';
+
+export type ProfileType = 'smooth' | 'j_handle' | 'classic_panel' | 'push_to_open';
+
+export type CountertopMaterial = 
+  | 'engineered_quartz' 
+  | 'natural_stone' 
+  | 'sintered_stone' 
+  | 'solid_surface' 
+  | 'hpl';
+
+export type SplashbackMaterial = 
+  | 'quartz' 
+  | 'glass' 
+  | 'porcelain' 
+  | 'hpl';
+
+export type DoorType = 'hinged' | 'sliding';
+
+export type DoorMaterialType = 
+  | 'lacquered_mdf' 
+  | 'mirror' 
+  | 'tinted_glass' 
+  | 'lacobel' 
+  | 'combined';
+
+export type SlidingSystemType = 'floor_supported' | 'suspended';
+
+export type FillingElementType = 
+  | 'shelf' 
+  | 'hanging_rod' 
+  | 'pantograph' 
+  | 'drawer' 
+  | 'basket' 
+  | 'trouser_rack' 
+  | 'shoe_rack';
+
+export type HingeType = 'roller' | 'ball_bearing' | 'soft_close';
+
+export type DrawerSlideType = 'roller' | 'ball_bearing' | 'soft_close';
+
+export type HandleType = 'overlay' | 'profile_gola' | 'push_to_open';
+
+export type HardwareManufacturer = 'blum' | 'hettich' | 'salice' | 'standard';
+
+export type AccessoryType = 
+  | 'dish_drainer' 
+  | 'cutlery_tray' 
+  | 'bottle_rack' 
+  | 'magic_corner' 
+  | 'led_lighting' 
+  | 'spice_rack' 
+  | 'pull_out_basket';
+
+export type ApplianceType = 
+  | 'oven' 
+  | 'cooktop' 
+  | 'hood' 
+  | 'dishwasher' 
+  | 'refrigerator' 
+  | 'microwave' 
+  | 'warming_drawer';
+
+export type ApplianceIntegration = 'built_in' | 'freestanding';
+
+export type LightingType = 'led_strip' | 'led_spots' | 'puck_lights';
+
+export interface Dimensions {
+  length?: number;
+  width?: number;
+  height?: number;
+  depth?: number;
+  unit: 'mm' | 'cm' | 'm';
+}
+
+export interface TypeAndSize {
+  layoutType: LayoutType;
+  dimensions: Dimensions;
+}
+
+export interface CorpusMaterialSelection {
+  material: CorpusMaterial;
+  thickness?: number;
+  color?: string;
+}
+
+export interface FacadeMaterialSelection {
+  material: FacadeMaterial;
+  finish: FinishType;
+  color: string;
+  profile: ProfileType;
+  edgeProfile?: string;
+}
+
+export interface CountertopSelection {
+  material: CountertopMaterial;
+  brand?: string;
+  color?: string;
+  thickness: 20 | 30 | 40;
+  edgeProfile?: string;
+}
+
+export interface SplashbackSelection {
+  material: SplashbackMaterial;
+  matchesCountertop: boolean;
+  color?: string;
+}
+
+export interface DoorMaterialItem {
+  section: number;
+  material: DoorMaterialType;
+  type?: string;
+  width: number;
+  color?: string;
+  finish?: FinishType;
+}
+
+export interface SlidingSystem {
+  type: SlidingSystemType;
+  profileColor: string;
+  manufacturer?: string;
+  trackCount?: number;
+  note?: string;
+}
+
+export interface FillingElement {
+  id?: string;
+  type: FillingElementType;
+  height: number;
+  quantity: number;
+  position?: string;
+  drawerType?: string;
+  liftingHeight?: string;
+  capacity?: number;
+}
+
+export interface FillingSection {
+  id?: string;
+  sectionWidth: number;
+  elements: FillingElement[];
+}
+
+export interface HardwareSelection {
+  hinges: HingeType;
+  drawerSlides: DrawerSlideType;
+  handles?: HandleType;
+  manufacturer: HardwareManufacturer;
+}
+
+export interface Accessory {
+  type: AccessoryType;
+  width?: number;
+  brand?: string;
+  note?: string;
+}
+
+export interface Appliance {
+  type: ApplianceType;
+  integration: ApplianceIntegration;
+  brand?: string;
+  model?: string;
+  cutoutDimensions?: Dimensions;
+}
+
+export interface LightingSelection {
+  workAreaLighting?: boolean;
+  internalLighting: boolean;
+  type: LightingType;
+  color?: string;
+  motionSensor?: boolean;
+}
+
+export interface ConfigurationSelections {
+  typeAndSize?: TypeAndSize;
+  style?: StyleType;
+  corpusMaterial?: CorpusMaterialSelection;
+  facadeMaterial?: FacadeMaterialSelection;
+  countertop?: CountertopSelection;
+  splashback?: SplashbackSelection;
+  doorType?: DoorType;
+  doorMaterials?: DoorMaterialItem[];
+  slidingSystem?: SlidingSystem;
+  internalFilling?: FillingSection[];
+  hardware?: HardwareSelection;
+  accessories?: Accessory[];
+  appliances?: Appliance[];
+  lighting?: LightingSelection;
+}
+
+export interface ConfigurationData {
+  productType: ProductTypeName;
+  selections: ConfigurationSelections;
+  notes?: string;
+}
+
+export interface ClientData {
+  name: string;
+  phone: string;
+  email: string;
+  preferredContactTime?: string;
+}
+
+export type OrderRequestStatus = 
+  | 'draft' 
+  | 'submitted' 
+  | 'quoted' 
+  | 'converted' 
+  | 'cancelled';
+
+export interface OrderRequest {
+  id: string;
+  productTypeId: string;
+  status: OrderRequestStatus;
+  clientData: ClientData;
+  configurationData: ConfigurationData;
+  createdDate: Date;
+  submittedDate?: Date;
+  projectId?: string;
+}
+
+export interface ConfiguratorState {
+  productType: ProductTypeName | null;
+  currentStep: number;
+  totalSteps: number;
+  configuration: ConfigurationData;
+  optionsCache: Record<string, OptionValue[]>;
+  categoriesCache: OptionCategory[];
+  isLoading: boolean;
+  errors: Record<string, string[]>;
+  savedStateTimestamp?: number;
+}
+
+export interface StepDefinition {
+  id: string;
+  title: string;
+  description: string;
+  component: React.ComponentType<any>;
+  validate: (config: ConfigurationSelections) => boolean;
+  isConditional?: boolean;
+  showIf?: (config: ConfigurationSelections) => boolean;
+}
