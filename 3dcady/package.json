@@ -8,7 +8,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db:generate": "npx prisma generate",
+    "db:migrate": "npx prisma migrate dev",
+    "db:seed-configurator": "npx ts-node prisma/seed-configurator.ts",
+    "setup:configurator": "./scripts/setup-configurator.sh"
   },
   "keywords": [],
   "author": "",

@@ -109,6 +109,7 @@ model Project {
   messageThreads  MessageThread[]
   fileUploads     FileUpload[]
   analysisJobs    DocumentAnalysisJob[]
+  orderRequests   OrderRequest[]
 
   @@map("projects")
 }
@@ -600,4 +601,84 @@ enum InvoiceStatus {
   PAID
   FAILED
   REFUNDED
+}
+
+// Furniture Configurator Models
+model ProductType {
+  id          String   @id @default(cuid())
+  name        String   @unique // 'kitchen' or 'wardrobe'
+  displayName String   @map("display_name")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdDate DateTime @default(now()) @map("created_date")
+  updatedDate DateTime @updatedAt @map("updated_date")
+
+  // Relations
+  categories  OptionCategory[]
+  orderRequests OrderRequest[]
+
+  @@map("product_types")
+}
+
+model OptionCategory {
+  id                String      @id @default(cuid())
+  productTypeId     String      @map("product_type_id")
+  name              String      // Technical identifier (e.g., 'materials_facade')
+  title             String      // User-facing title
+  stepOrder         Int         @map("step_order")
+  isRequired        Boolean     @default(true) @map("is_required")
+  allowsMultiple    Boolean     @default(false) @map("allows_multiple")
+  conditionalDisplay Json?      @map("conditional_display") // Conditional logic
+  createdDate       DateTime    @default(now()) @map("created_date")
+  updatedDate       DateTime    @updatedAt @map("updated_date")
+
+  // Relations
+  productType       ProductType @relation(fields: [productTypeId], references: [id], onDelete: Cascade)
+  options           OptionValue[]
+
+  @@unique([productTypeId, name])
+  @@map("option_categories")
+}
+
+model OptionValue {
+  id            String         @id @default(cuid())
+  categoryId    String         @map("category_id")
+  name          String
+  description   String?
+  imageUrl      String?        @map("image_url")
+  priceFactor   Decimal?       @map("price_factor") @db.Decimal(5, 2)
+  specifications Json?         // Additional technical specifications
+  displayOrder  Int            @default(0) @map("display_order")
+  isAvailable   Boolean        @default(true) @map("is_available")
+  createdDate   DateTime       @default(now()) @map("created_date")
+  updatedDate   DateTime       @updatedAt @map("updated_date")
+
+  // Relations
+  category      OptionCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@map("option_values")
+}
+
+model OrderRequest {
+  id                  String              @id @default(cuid())
+  productTypeId       String              @map("product_type_id")
+  status              OrderRequestStatus  @default(DRAFT)
+  clientData          Json                @map("client_data") // Contact information
+  configurationData   Json                @map("configuration_data") // Complete configuration
+  createdDate         DateTime            @default(now()) @map("created_date")
+  submittedDate       DateTime?           @map("submitted_date")
+  projectId           String?             @map("project_id")
+
+  // Relations
+  productType         ProductType         @relation(fields: [productTypeId], references: [id])
+  project             Project?            @relation(fields: [projectId], references: [id])
+
+  @@map("order_requests")
+}
+
+enum OrderRequestStatus {
+  DRAFT
+  SUBMITTED
+  QUOTED
+  CONVERTED
+  CANCELLED
 }
